@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <link href="../static/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <script src="../static/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/bootstrap.bundle.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-success bg-gradient text-white">
   <div class="container-fluid">
     <a class="navbar-brand text-white" href="/">
-      <img src="../static/image/logo.svg" alt="" width="30" height="24" class="d-inline-block align-text-top">
+      <img src="/static/image/logo.svg" alt="" width="30" height="24" class="d-inline-block align-text-top">
       Knowledge Cluster
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,24 +55,25 @@
   <div class="col-md-12">
     <div class="card mx-3">
       <div class="card-body">
-        <h2 class="card-title"> <strong> Paper - Title  </strong></h2>
-        <h6 class="card-subtitle mb-2 text-muted"><span class="badge badge-pill bg-success"> AAN </span> E03-1062</h6>
-        <a href="#" class="text-decoration-none text-dark">Author1</a>,
-        <a href="#" class="text-decoration-none text-dark">Author2</a>
+        <h2 class="card-title"> <strong> {{ paper.title }}  </strong></h2>
+        <h6 class="card-subtitle mb-2 text-muted"><span class="badge badge-pill bg-success"> {{ paper.database }} </span> {{ paper.paper_id }} </h6>
+        {% for author in paper.authors %}
+        <a href="/author/info/{{ author }}" class="text-decoration-none text-dark">{{ paper.authors[author] }}</a>,
+        {% endfor %}
         <br /><br />
         <dl class="row">
           <dt class="col-sm-2">Publication Year</dt>
-          <dd class="col-sm-10">2003</dd>
+          <dd class="col-sm-10"> {{ paper.year }} </dd>
 
           <dt class="col-sm-2">Keywords</dt>
           <dd class="col-sm-10">
-            <a href="#" class="text-decoration-none text-muted">Keyword1</a>;
-            <a href="#" class="text-decoration-none text-muted">Keyword1</a>;
-            <a href="#" class="text-decoration-none text-muted">Keyword1</a>;
+            {% for keyword in paper.keywords %}
+            <a href="#" class="text-decoration-none text-muted">{{ paper.keywords[keyword] }}</a>;
+            {% endfor %}
           </dd>
 
           <dt class="col-sm-2">Abstract</dt>
-          <dd class="col-sm-10">this paper describes the neca mnlg; a fully implemented multimodal natural language generation module the mnlg is deployed as part of the neca system which generates dialogues between animated agents the generation module supports the seamless integration of full grammar rules, templates and canned text the generator takes input which allows for the specification of syntactic, semantic and pragmatic constraints on the output</dd>
+          <dd class="col-sm-10"> {{ paper.abstract }} </dd>
         </dl>
       </div>
     </div>
@@ -80,22 +81,24 @@
 </div>
 
 <div class="row m-3">
-  <div class="card col-md-8">
+  <div class="card col-lg-8">
     <div class="card-body">
       <h4 class="card-title">Database</h4>
-      <p>AAN</p>
+      <p>{{paper.database}}</p>
       <hr>
       <h4 class="card-title">Reference</h4>
       <ul>
-        <li>Weakly Supervised Approaches For Ontology Population. <small class="text-secondary">Tanev, Hristo; Magnini, Bernardo,</small>2006</li>
-        <li>Computing Consensus Translation For Multiple Machine Translation Systems Using Enhanced Hypothesis Alignment;<small class="text-secondary"> Matusov, Evgeny; Ueffing, Nicola; Ney, Hermann</small>,2006</li>
-        <li>Automatic Detection Of Nonreferential It In Spoken Multi-Party Dialog;<small class="text-secondary">Muller, Christof E.</small>,2006</li>
-        <li>Weakly Supervised Approaches For Ontology Population. <small class="text-secondary">Tanev, Hristo; Magnini, Bernardo,</small>2006</li>
-        <li>Computing Consensus Translation For Multiple Machine Translation Systems Using Enhanced Hypothesis Alignment;<small class="text-secondary"> Matusov, Evgeny; Ueffing, Nicola; Ney, Hermann</small>,2006</li>
-        <li>Automatic Detection Of Nonreferential It In Spoken Multi-Party Dialog;<small class="text-secondary">Muller, Christof E.</small>,2006</li>
-        <li>Weakly Supervised Approaches For Ontology Population. <small class="text-secondary">Tanev, Hristo; Magnini, Bernardo,</small>2006</li>
-        <li>Computing Consensus Translation For Multiple Machine Translation Systems Using Enhanced Hypothesis Alignment;<small class="text-secondary"> Matusov, Evgeny; Ueffing, Nicola; Ney, Hermann</small>,2006</li>
-        <li>Automatic Detection Of Nonreferential It In Spoken Multi-Party Dialog;<small class="text-secondary">Muller, Christof E.</small>,2006</li>
+        {% for p in p_refs %}
+        <li>
+          <a href="/paper/info/{{ p.paper_id }}" class="text-decoration-none text-dark">{{ p.title }}</a>
+          <small class="text-secondary">
+            {% for author in p.authors %}
+            {{ p.authors[author] }},
+            {% endfor %}
+          </small>
+          {{ p.year }}
+        </li>
+        {% endfor %}
       </ul>
       <hr>
       <h4 class="card-title">Recommended Papers</h4>
@@ -108,58 +111,31 @@
       </ul>
     </div>
   </div>
-  <div class="card text-center col-md-4">
+  <div class="card text-center col-lg-4">
     <div class="card-header">Authors</div>
     <div class="card-body">
-      <div class="card mb-3 py-3" style="max-width: 540px;">
+      {% for author in paper.authors %}
+      <div class="card mb-3 py-3">
         <div class="media d-flex">
-        <img src="../static/image/globe1.svg" class="mr-3" style="width:64px">
+        <img src="/static/image/globe1.svg" class="mr-3" style="width:100px">
         <div class="media-body w-100">
-          <h4 class="mt-0">Author 3 </h4>
-          <div class="row float-start mx-2">
+          <h4 class="mt-0"> <a href="/author/info/{{ author }}" class="text-decoration-none text-dark">{{ paper.authors[author] }}</a> </h4>
+          <h6 class="card-subtitle mb-2 text-muted"><span class="badge badge-pill bg-success"> {{ paper.database }} </span> {{ author }} </h6>
+          <div class="row align-content-center mx-2">
           <ul class="list-group list-group-horizontal">
             <li class="list-group-item flex-fill border-end border-0 text-center">Papers<br />1,989</li>
-            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Authors<br />17</li>
+            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Aus<br />17</li>
             <li class="list-group-item flex-fill border-0 text-center">Clusters<br />5</li>
           </ul>
         </div>
         </div>
       </div>
       </div>
-      <div class="card mb-3 py-3" style="max-width: 540px;">
-        <div class="media d-flex">
-        <img src="../static/image/globe1.svg" class="mr-3" style="width:64px">
-        <div class="media-body w-100">
-          <h4 class="mt-0">Author 3 </h4>
-          <div class="row float-start mx-2">
-          <ul class="list-group list-group-horizontal">
-            <li class="list-group-item flex-fill border-end border-0 text-center">Papers<br />1,989</li>
-            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Authors<br />17</li>
-            <li class="list-group-item flex-fill border-0 text-center">Clusters<br />5</li>
-          </ul>
-        </div>
-        </div>
-      </div>
-      </div>
-      <div class="card mb-3 py-3" style="max-width: 540px;">
-        <div class="media d-flex">
-        <img src="../static/image/globe1.svg" class="mr-3" style="width:64px">
-        <div class="media-body w-100">
-          <h4 class="mt-0">Author 3 </h4>
-          <div class="row float-start mx-2">
-          <ul class="list-group list-group-horizontal">
-            <li class="list-group-item flex-fill border-end border-0 text-center">Papers<br />1,989</li>
-            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Authors<br />17</li>
-            <li class="list-group-item flex-fill border-0 text-center">Clusters<br />5</li>
-          </ul>
-        </div>
-        </div>
-      </div>
-      </div>
+      {% endfor %}
     </div>
   </div>
-  <div class="card col-md-8" style="height: 400px">
-    <div id="container" style="height: 100%; width:100%">
+  <div class="card col-lg-8" style="height: 400px">
+    <div id="container" style="height: 100%; width:100%"></div>
   </div>
 </div>
 <hr>
@@ -193,12 +169,12 @@ var myChart = echarts.init(dom);
 var app = {};
 var option;
 myChart.showLoading();
-$.get('https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data/asset/data/webkit-dep.json', function (webkitDep) {
+$.post('/graphdata/{{ paper.paper_id }}', function (webkitDep) {
     myChart.hideLoading();
 
     option = {
         legend: {
-            data: ['HTMLElement', 'WebGL', 'SVG', 'CSS', 'Other']
+            data: ['SOURCE', 'TARGET','AUTHOR','KEYWORD']
         },
         toolbox: {
           show: true,
@@ -236,22 +212,31 @@ $.get('https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data
             type: 'graph',
             layout: 'force',
             label: {
-                position: 'right',
+                show: false,
+                position: 'inside',
                 formatter: '{b}'
             },
+            zoom: 3,
             draggable: true,
-            data: webkitDep.nodes.map(function (node, idx) {
-                node.id = idx;
-                return node;
-            }),
+            data: webkitDep.nodes,
             categories: webkitDep.categories,
             animation: false,
             roam: true,
             force: {
-                edgeLength: 5,
-                repulsion: 20,
-                gravity: 0.2
+                edgeLength: 15,
+                repulsion: 30,
+                gravity: 0.1
             },
+            cursor: 'pointer',
+            lineStyle: {
+              curveness: 0.3
+            },
+            emphasis: {
+                      focus: 'adjacency',
+                      lineStyle: {
+                          width: 10
+                      }
+                  },
             edges: webkitDep.links
         }]
     };
