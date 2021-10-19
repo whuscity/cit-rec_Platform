@@ -12,29 +12,39 @@ def hello_world():
 
 @app.route('/paper/info/<paperid>')
 def paperinfo(paperid):
-    p = m.getPaperInfo([paperid])[0]
+    # p = m.getPaperInfo([paperid])[0]
+    p = n.getPaperBasic(paperid)
     p = n.getNeighbors(p)
     refs_id = [p.refs[paper] for paper in p.refs]
     cits_id = [p.cits[paper] for paper in p.cits]
     recs_id = [p.recs[paper] for paper in p.recs]
-    refs = m.getPaperInfo(refs_id)
-    cits = m.getPaperInfo(cits_id)
-    recs = m.getPaperInfo(recs_id)
+    # refs = m.getPaperInfo(refs_id)
+    # cits = m.getPaperInfo(cits_id)
+    # recs = m.getPaperInfo(recs_id)
     refs_full = []
-    for ref in refs:
-        ref_full = n.getNeighbors(ref)
-        refs_full.append(ref_full)
-    refs_full.sort(key=lambda ref:ref.year)
+    for ref_id in refs_id:
+        refs_full.append(n.getPaperBasic(ref_id))
     cits_full = []
-    for cit in cits:
-        cit_full = n.getNeighbors(cit)
-        cits_full.append(cit_full)
+    for cit_id in cits_id:
+        cits_full.append(n.getPaperBasic(cit_id))
     recs_full = []
+    for rec_id in recs_id:
+        recs_full.append(n.getPaperBasic(rec_id))
+    # refs_full = []
+    # for ref in refs:
+    #     ref_full = n.getNeighbors(ref)
+    #     refs_full.append(ref_full)
+    refs_full.sort(key=lambda ref:ref.year)
+    # cits_full = []
+    # for cit in cits:
+    #     cit_full = n.getNeighbors(cit)
+    #     cits_full.append(cit_full)
+    # recs_full = []
     cits_full.sort(key=lambda cit: cit.year)
-    for rec in recs:
-        rec_full = n.getNeighbors(rec)
-        recs_full.append(rec_full)
-    recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id],reverse=True)
+    # for rec in recs:
+    #     rec_full = n.getNeighbors(rec)
+    #     recs_full.append(rec_full)
+    # recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id],reverse=True)
     authors_full = []
     for auth in p.authors:
         authors_full.append(n.getAuthorBasic(auth))
@@ -74,14 +84,18 @@ def authorinfo(authorid):
 def loadGraph(paperid, load_type='G'):
     js = {}
     if load_type == 'G':
-        p = m.getPaperInfo([paperid])[0]
+        # p = m.getPaperInfo([paperid])[0]
+        p = n.getPaperBasic(paperid)
         p = n.getNeighbors(p)
         cits_id = [p.cits[paper] for paper in p.cits]
-        cits = m.getPaperInfo(cits_id)
+        # cits = m.getPaperInfo(cits_id)
+        # cits_full = []
+        # for cit in cits:
+        #     cit_full = n.getNeighbors(cit)
+        #     cits_full.append(cit_full)
         cits_full = []
-        for cit in cits:
-            cit_full = n.getNeighbors(cit)
-            cits_full.append(cit_full)
+        for cit_id in cits_id:
+            cits_full.append(n.getPaperBasic(cit_id))
         nodes = [{
             "id": p.n_id,
             "name": p.paper_id,

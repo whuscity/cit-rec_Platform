@@ -10,6 +10,26 @@ class neoConnection:
             password = "888888"
         )
 
+    def getPaperBasic(self,paperid):
+        n_matcher = NodeMatcher(self.graph)
+        r_matcher = RelationshipMatcher(self.graph)
+        p = paper.Paper()
+        paper_node = n_matcher.match("Paper",name=str(paperid)).first()
+        print(paper_node)
+        if paper_node is None: return p
+        p.n_id = paper_node['id']
+        p.paper_id = paper_node['name']
+        p.title = paper_node['title']
+        p.year = paper_node['year']
+        p.abstract = paper_node['abstract']
+        p.database = paper_node['dbname']
+        p.cluster = paper_node['cluster']
+        authors = r_matcher.match((None, paper_node), r_type="author").all()
+        for author in authors:
+            p.authors[author.start_node['id']] = author.start_node['name']
+        return p
+
+
     def getNeighbors(self,paper):
         n_matcher = NodeMatcher(self.graph)
         r_matcher = RelationshipMatcher(self.graph)
