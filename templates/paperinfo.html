@@ -86,7 +86,22 @@
       <h4 class="card-title">Database</h4>
       <p>{{paper.database}}</p>
       <hr>
-      <h4 class="card-title">Reference</h4>
+      <h4 class="card-title">References<span class="badge badge-pill bg-light text-dark"> {{ len_p_cits }} </span></h4>
+      <ul>
+        {% for p in p_cits %}
+        <li>
+          <a href="/paper/info/{{ p.paper_id }}" class="text-decoration-none text-dark">{{ p.title }}</a>
+          <small class="text-secondary">
+            {% for author in p.authors %}
+            {{ p.authors[author] }},
+            {% endfor %}
+          </small>
+          {{ p.year }}
+        </li>
+        {% endfor %}
+      </ul>
+      <hr>
+      <h4 class="card-title">Cited Papers<span class="badge badge-pill bg-light text-dark"> {{ len_p_refs }} </span></h4>
       <ul>
         {% for p in p_refs %}
         <li>
@@ -103,29 +118,35 @@
       <hr>
       <h4 class="card-title">Recommended Papers</h4>
       <ul>
-        <li>Weakly Supervised Approaches For Ontology Population. <small class="text-secondary">Tanev, Hristo; Magnini, Bernardo,</small>2006</li>
-        <li>Computing Consensus Translation For Multiple Machine Translation Systems Using Enhanced Hypothesis Alignment;<small class="text-secondary"> Matusov, Evgeny; Ueffing, Nicola; Ney, Hermann</small>,2006</li>
-        <li>Automatic Detection Of Nonreferential It In Spoken Multi-Party Dialog;<small class="text-secondary">Muller, Christof E.</small>,2006</li>
-        <li>Weakly Supervised Approaches For Ontology Population. <small class="text-secondary">Tanev, Hristo; Magnini, Bernardo,</small>2006</li>
-        <li>Computing Consensus Translation For Multiple Machine Translation Systems Using Enhanced Hypothesis Alignment;<small class="text-secondary"> Matusov, Evgeny; Ueffing, Nicola; Ney, Hermann</small>,2006</li>
+        {% for rec in recs_full %}
+        <li><span class="badge badge-pill {% if paper.rec_sim[rec.n_id]*100 > 95 %}bg-success text-light{% elif paper.rec_sim[rec.n_id]*100 > 85 %}bg-info text-dark{% else %}bg-light text-dark{% endif %}"> {{ "%.1f%%" | format(paper.rec_sim[rec.n_id]*100) }} </span>
+          <a href="/paper/info/{{ rec.paper_id }}" class="text-decoration-none text-dark">{{ rec.title }}</a>
+          <small class="text-secondary">
+          {% for author in rec.authors %}
+            {{ rec.authors[author] }},
+          {% endfor %}
+          </small>
+          {{ rec.year }}
+        </li>
+        {% endfor %}
       </ul>
     </div>
   </div>
   <div class="card text-center col-lg-4">
     <div class="card-header">Authors</div>
     <div class="card-body">
-      {% for author in paper.authors %}
+      {% for author in auths %}
       <div class="card mb-3 py-3">
         <div class="media d-flex">
         <img src="/static/image/globe1.svg" class="mr-3" style="width:100px">
         <div class="media-body w-100">
-          <h4 class="mt-0"> <a href="/author/info/{{ author }}" class="text-decoration-none text-dark">{{ paper.authors[author] }}</a> </h4>
-          <h6 class="card-subtitle mb-2 text-muted"><span class="badge badge-pill bg-success"> {{ paper.database }} </span> {{ author }} </h6>
+          <h4 class="mt-0"> <a href="/author/info/{{ author.n_id }}" class="text-decoration-none text-dark">{{ author.name }}</a> </h4>
+          <h6 class="card-subtitle mb-2 text-muted"><span class="badge badge-pill bg-success"> {{ author.database }} </span> {{ author.n_id }} </h6>
           <div class="row align-content-center mx-2">
           <ul class="list-group list-group-horizontal">
-            <li class="list-group-item flex-fill border-end border-0 text-center">Papers<br />1,989</li>
-            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Aus<br />17</li>
-            <li class="list-group-item flex-fill border-0 text-center">Clusters<br />5</li>
+            <li class="list-group-item flex-fill border-end border-0 text-center">Papers<br /> {{ author.paper_count }} </li>
+            <li class="list-group-item flex-fill border-end border-0 text-center">Co-Aus<br /> {{ author.co_authors_count }} </li>
+            <li class="list-group-item flex-fill border-0 text-center">Clusters<br /> {{ author.cluster_count }} </li>
           </ul>
         </div>
         </div>
@@ -174,7 +195,34 @@ $.post('/graphdata/{{ paper.paper_id }}', function (webkitDep) {
 
     option = {
         legend: {
-            data: ['SOURCE', 'TARGET','AUTHOR','KEYWORD']
+            data: webkitDep.legends
+        },
+        tooltip:{
+          show: true,
+          trigger: 'item',
+          extraCssText:'margin:10px;white-space:pre-wrap',
+          formatter: function(x) {
+            if (x.data.title) {
+              var title = x.data.title;
+              var year = x.data.year;
+              var cluster = x.data.cluster;
+            }
+            var name = x.data.name;
+            // var dbname = x.data.dbname;
+            var nodeType = x.data.type;
+            if (nodeType == 'Paper') {
+              return '<b>' + title + '</b><br /><i>' + year + '</i><br />Cluster:'+ cluster +'<span class="badge badge-pill bg-success">' + 'db' + '</span>'
+            }
+            else if(nodeType == 'Author'){
+              return '<b>' + name + '</b><br />' + nodeType
+            }
+            else if(nodeType == 'Keyword'){
+              return '<b>' + name + '</b><br />' + nodeType
+            }
+            else{
+
+            }
+          }
         },
         toolbox: {
           show: true,
