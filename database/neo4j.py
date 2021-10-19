@@ -15,7 +15,6 @@ class neoConnection:
         r_matcher = RelationshipMatcher(self.graph)
         p = paper.Paper()
         paper_node = n_matcher.match("Paper",name=str(paperid)).first()
-        print(paper_node)
         if paper_node is None: return p
         p.n_id = paper_node['id']
         p.paper_id = paper_node['name']
@@ -28,7 +27,6 @@ class neoConnection:
         for author in authors:
             p.authors[author.start_node['id']] = author.start_node['name']
         return p
-
 
     def getNeighbors(self,paper):
         n_matcher = NodeMatcher(self.graph)
@@ -72,8 +70,7 @@ class neoConnection:
         a.co_authors = eval(author_node['co_auths'])
         a_ps = r_matcher.match((author_node,None),r_type="author")
         for a_p in a_ps:
-            # print(a_p.end_node['id'])
-            a.papers.append(self.getNeighbors(paper.Paper(n_id=a_p.end_node['id'])))
+            a.papers.append(self.getPaperBasic(a_p.end_node['name']))
         a.paper_count = len(a.papers)
         a.cluster_count = len(a.paper_count_cluster)
         a.co_authors_count = len(a.co_authors)
@@ -100,3 +97,8 @@ class neoConnection:
         n_matcher = NodeMatcher(self.graph)
         keyword_node = n_matcher.match("Keyword", id=keyword_id).first()
         return keyword_node['name'] if keyword_node else 'NULL'
+
+    # def search(self,query,mode="Paper"):
+    #     n_matcher = NodeMatcher(self.graph)
+    #     if mode == "Paper":
+

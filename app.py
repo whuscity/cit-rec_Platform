@@ -28,7 +28,7 @@ def paperinfo(paperid):
     for cit_id in cits_id:
         cits_full.append(n.getPaperBasic(cit_id))
     recs_full = []
-    for rec_id in recs_id:
+    for rec_id in recs_id[:12]:
         recs_full.append(n.getPaperBasic(rec_id))
     # refs_full = []
     # for ref in refs:
@@ -44,7 +44,7 @@ def paperinfo(paperid):
     # for rec in recs:
     #     rec_full = n.getNeighbors(rec)
     #     recs_full.append(rec_full)
-    # recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id],reverse=True)
+    recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id],reverse=True)
     authors_full = []
     for auth in p.authors:
         authors_full.append(n.getAuthorBasic(auth))
@@ -188,7 +188,7 @@ def loadGraph(paperid, load_type='G'):
         js['nodes'] = nodes
         js['links'] = edges
         js['legends'] = legends
-    print(js)
+    # print(js)
     return js
 
 

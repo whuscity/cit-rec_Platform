@@ -119,7 +119,7 @@
       <h4 class="card-title">Recommended Papers</h4>
       <ul>
         {% for rec in recs_full %}
-        <li><span class="badge badge-pill {% if paper.rec_sim[rec.n_id]*100 > 95 %}bg-success text-light{% elif paper.rec_sim[rec.n_id]*100 > 85 %}bg-info text-dark{% else %}bg-light text-dark{% endif %}"> {{ "%.1f%%" | format(paper.rec_sim[rec.n_id]*100) }} </span>
+        <li><span class="badge badge-pill {% if paper.rec_sim[rec.n_id]*100 > 95 %}bg-success text-light{% elif paper.rec_sim[rec.n_id]*100 > 85 %}bg-primary text-light{% else %}bg-secondary text-light{% endif %}"> {{ "%.1f%%" | format(paper.rec_sim[rec.n_id]*100) }} </span>
           <a href="/paper/info/{{ rec.paper_id }}" class="text-decoration-none text-dark">{{ rec.title }}</a>
           <small class="text-secondary">
           {% for author in rec.authors %}
