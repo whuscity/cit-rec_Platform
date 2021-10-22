@@ -1,5 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, abort, jsonify
+import time
 from database import mysql, neo4j
+import re
 
 app = Flask(__name__)
 
@@ -34,7 +36,7 @@ def paperinfo(paperid):
     # for ref in refs:
     #     ref_full = n.getNeighbors(ref)
     #     refs_full.append(ref_full)
-    refs_full.sort(key=lambda ref:ref.year)
+    refs_full.sort(key=lambda ref: ref.year)
     # cits_full = []
     # for cit in cits:
     #     cit_full = n.getNeighbors(cit)
@@ -44,11 +46,13 @@ def paperinfo(paperid):
     # for rec in recs:
     #     rec_full = n.getNeighbors(rec)
     #     recs_full.append(rec_full)
-    recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id],reverse=True)
+    recs_full.sort(key=lambda rec: p.rec_sim[rec.n_id], reverse=True)
     authors_full = []
     for auth in p.authors:
         authors_full.append(n.getAuthorBasic(auth))
-    return render_template('paperinfo.html', paper=p, p_refs=refs_full, p_cits=cits_full, auths = authors_full, len_p_refs = len(refs_full), len_p_cits = len(cits_full), recs_full=recs_full)
+    return render_template('paperinfo.html', paper=p, p_refs=refs_full, p_cits=cits_full, auths=authors_full,
+                           len_p_refs=len(refs_full), len_p_cits=len(cits_full), recs_full=recs_full)
+
 
 @app.route('/author/info/<authorid>')
 def authorinfo(authorid):
@@ -65,20 +69,22 @@ def authorinfo(authorid):
         name = n.getKeyword(keyword_id)
         count = author.paper_count_keyword[keyword_id]
         if i <= 7:
-            top_keywords.append([name,count])
+            top_keywords.append([name, count])
             i += 1
-        keyword_dict[name]=count
+        keyword_dict[name] = count
     i = 0
     author.paper_count_keyword = keyword_dict
     top_co_authors = []
     for author_id in author.co_authors.keys():
         name = n.getAuthorBasic(author_id)
         count = author.co_authors[author_id]
-        top_co_authors.append([name,count])
+        top_co_authors.append([name, count])
         i += 1
         if i >= 3:
             break
-    return render_template('scholarinfo.html',author = author,year = year, top_keywords = top_keywords, top_co_authors = top_co_authors)
+    return render_template('scholarinfo.html', author=author, year=year, top_keywords=top_keywords,
+                           top_co_authors=top_co_authors)
+
 
 @app.route('/graphdata/<paperid>', methods=['POST'])
 def loadGraph(paperid, load_type='G'):
@@ -104,7 +110,7 @@ def loadGraph(paperid, load_type='G'):
             "year": p.year,
             "cluster": p.cluster,
             "symbolSize": 20,
-            "category": int(p.cluster)+2,
+            "category": int(p.cluster) + 2,
             "label": {
                 "show": True
             },
@@ -116,7 +122,9 @@ def loadGraph(paperid, load_type='G'):
             }
         }]
         clusters = [p.cluster]
-        edges = []; auths = []; kywds = []
+        edges = [];
+        auths = [];
+        kywds = []
         for author in p.authors:
             nodes.append({
                 "id": author,
@@ -153,7 +161,7 @@ def loadGraph(paperid, load_type='G'):
                 "year": cit.year,
                 "cluster": cit.cluster,
                 "symbolSize": 20,
-                "category": int(cit.cluster)+2,
+                "category": int(cit.cluster) + 2,
                 "label": {
                     "show": True
                 }
@@ -176,14 +184,14 @@ def loadGraph(paperid, load_type='G'):
                     })
         clusters = sorted(list(set(clusters)))
         for node in nodes:
-            if node['type']=='Paper':
-                node['category'] = clusters.index(node['cluster'])+2
+            if node['type'] == 'Paper':
+                node['category'] = clusters.index(node['cluster']) + 2
         js = dict(type="force", categories=[], nodes=[], links=[])
-        categories = [{'name':'Author'},{'name':'Keyword'}]
-        legends = ['Author','Keyword']
+        categories = [{'name': 'Author'}, {'name': 'Keyword'}]
+        legends = ['Author', 'Keyword']
         for cluster in clusters:
-            categories.append({'name':'Clu-'+str(cluster)})
-            legends.append('Clu-'+str(cluster))
+            categories.append({'name': 'Clu-' + str(cluster)})
+            legends.append('Clu-' + str(cluster))
         js['categories'] = categories
         js['nodes'] = nodes
         js['links'] = edges
@@ -192,7 +200,40 @@ def loadGraph(paperid, load_type='G'):
     return js
 
 
+@app.route('/paper/list', methods=['POST'])
+def paper_list():
+    query = request.form["query"]
+    return render_template("resultlist.html",query=query)
+
+@app.route('/paper/list', methods=['GET'])
+def paper_list_default():
+    query = ""
+    return render_template("resultlist.html",query=query)
+
+
+@app.route('/search',methods=['POST'])
+def search():
+    mode = request.form["mode"]
+    query = request.form["query"]
+    page = request.form["page"]
+    response = n.search(query, page)
+    result = response["result"]
+    if result is None:
+        abort(404)
+    res_list = []
+    for paper in result:
+        detail = n.getPaperBasic(paper['name'])
+        authors = []
+        for author in detail.authors:
+            authors.append(detail.authors[author])
+        info = {'id': detail.paper_id,
+                'title': re.sub(query, '<span class=\"text-danger\">' + query + '</span>', str(detail.title),flags=re.IGNORECASE),
+                'year': detail.year, 'cluster': detail.cluster, 'cits': detail.cit_count, 'author': authors}
+        res_list.append(info)
+    return {"result":res_list,"count":response["count"]}
+
+
 if __name__ == '__main__':
     m = mysql.mysqlConnection()
     n = neo4j.neoConnection()
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(host='0.0.0.0', port=8517, threaded=True)

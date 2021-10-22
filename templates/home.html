@@ -19,16 +19,16 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link active text-white" aria-current="page" href="/home">Home</a>
+          <a class="nav-link rounded-pill text-success bg-light" aria-current="page" href="/home">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/Cluster">Clusters</a>
+          <a class="nav-link text-white" href="#">Clusters</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/paper">Papers</a>
+          <a class="nav-link text-white" href="/paper/list">Papers</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white" href="/scholar">Scholars</a>
+          <a class="nav-link text-white" href="#">Scholars</a>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -44,9 +44,19 @@
           <a class="nav-link disabled text-white" href="#" tabindex="-1" aria-disabled="true">About</a>
         </li>
       </ul>
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      <form class="d-flex" action="/paper/list" method="post">
+        <div class="form-control p-0 input-group">
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span id="modename">Paper</span></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="switchmode('Paper')">Paper</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchmode('Author')">Author</a></li>
+          </ul>
+          <input type="text" class="form-control" aria-label="Text input with dropdown button" id="query" name="query">
+          <input hidden="hidden" type="text" class="mode" name="mode" value="Paper" id="mode">
+        </div>
+<!--        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">-->
         <button class="btn btn-outline-success bg-light" type="submit">Search</button>
+
       </form>
     </div>
   </div>
@@ -131,4 +141,12 @@
   </div>
 </div>
 </body>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+  function switchmode(text) {
+    $("#modename").html(text)
+    $("#mode").val(text)
+  }
+
+</script>
 </html>

@@ -44,9 +44,18 @@
           <a class="nav-link disabled text-white" href="#" tabindex="-1" aria-disabled="true">About</a>
         </li>
       </ul>
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+      <form class="d-flex" action="/paper/list" method="post">
+        <div class="form-control p-0 input-group">
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span id="modename">Paper</span></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="switchmode('Paper')">Paper</a></li>
+            <li><a class="dropdown-item" href="#" onclick="switchmode('Author')">Author</a></li>
+          </ul>
+          <input type="text" class="form-control" aria-label="Text input with dropdown button" id="query" name="query">
+          <input hidden="hidden" type="text" class="mode" name="mode" value="Paper" id="mode">
+        </div>
         <button class="btn btn-outline-success bg-light" type="submit">Search</button>
+
       </form>
     </div>
   </div>
@@ -301,4 +310,11 @@ if (option && typeof option === 'object') {
 
     </script>
 </body>
+<script>
+  function switchmode(text) {
+    $("#modename").html(text)
+    $("#mode").val(text)
+  }
+
+</script>
 </html>
