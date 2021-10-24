@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, abort, jsonify
 import time
 from database import mysql, neo4j
+import instance.paper as pt
 import re
 
 app = Flask(__name__)
@@ -87,18 +88,13 @@ def authorinfo(authorid):
 
 
 @app.route('/graphdata/<paperid>', methods=['POST'])
-def loadGraph(paperid, load_type='G'):
+def loadGraph(paperid):
+    load_type = request.form['load_type']
     js = {}
     if load_type == 'G':
-        # p = m.getPaperInfo([paperid])[0]
         p = n.getPaperBasic(paperid)
         p = n.getNeighbors(p)
         cits_id = [p.cits[paper] for paper in p.cits]
-        # cits = m.getPaperInfo(cits_id)
-        # cits_full = []
-        # for cit in cits:
-        #     cit_full = n.getNeighbors(cit)
-        #     cits_full.append(cit_full)
         cits_full = []
         for cit_id in cits_id:
             cits_full.append(n.getPaperBasic(cit_id))
@@ -196,27 +192,150 @@ def loadGraph(paperid, load_type='G'):
         js['nodes'] = nodes
         js['links'] = edges
         js['legends'] = legends
-    # print(js)
+    elif load_type == 'W':
+        year = request.form["year"]
+        rs = n.cypher("MATCH (p1:Paper)-[r:reference]->(p2:Paper) WHERE p1.year={} AND p2.year={} RETURN r".format(year,year)).data()
+        nodes = []; edges = []; categories = []; legends = []
+        paper_nodes = []
+        for rd in rs:
+            r = rd['r']
+            paper_nodes.append(r.start_node)
+            paper_nodes.append(r.end_node)
+            edges.append({"source": r.start_node['id'], "target": r.end_node['id']})
+        node_ids = []; clusters = []
+        for paper in paper_nodes:
+            if paper['id'] in node_ids:
+                pass
+            else:
+                nodes.append({
+                    "id": paper['id'],
+                    "name": paper['name'],
+                    "type": "Paper",
+                    "title": paper["title"],
+                    "year": paper["year"],
+                    "cluster": paper["cluster"],
+                    "symbolize": 15,
+                    "category": int(paper["cluster"]),
+                    "label":{
+                        "show": False
+                    }
+                })
+                node_ids.append(paper['id'])
+                clusters.append(paper["cluster"])
+        clusters = sorted(list(set(clusters)))
+        for cluster in clusters:
+            categories.append({'name': 'Clu-' + str(cluster)})
+            legends.append('Clu-' + str(cluster))
+        js = dict(type="force", categories=[], nodes=[], links=[])
+        js['categories'] = categories
+        js['nodes'] = nodes
+        js['links'] = edges
+        js['legends'] = legends
+    elif load_type == 'C':
+        cluster = request.form["cluster"]
+        year = request.form["year"]
+        rs = n.cypher("MATCH (p1:Paper)-[r:reference]->(p2:Paper) WHERE p1.cluster=\'{}\' AND p2.cluster=\'{}\' AND p1.year={} AND p2.year={} RETURN r".format(cluster,cluster,year,year)).data()
+        nodes = []; edges = []
+        paper_nodes = []
+        for rd in rs:
+            r = rd['r']
+            paper_nodes.append(r.start_node)
+            paper_nodes.append(r.end_node)
+            edges.append({"source": r.start_node['id'], "target": r.end_node['id']})
+        node_ids = []; kwd_count = {}; paper_count = 0
+        for paper in paper_nodes:
+            if paper['id'] in node_ids:
+                pass
+            else:
+                p = pt.Paper(n_id=paper['id'])
+                nodes.append({
+                    "id": paper['id'],
+                    "name": paper['name'],
+                    "type": "Paper",
+                    "title": paper["title"],
+                    "year": paper["year"],
+                    "cluster": paper["cluster"],
+                    "symbolize": 30,
+                    "category": 2,
+                    "label":{
+                        "show": True
+                    }
+                })
+                p = n.getNeighbors(p)
+                for author in p.authors:
+                    edges.append({
+                        "source": author,
+                        "target": p.n_id
+                    })
+                    if author in node_ids: pass
+                    else:
+                        nodes.append({
+                            "id": author,
+                            "name": p.authors[author],
+                            "type": "Author",
+                            "category": 0,
+                            "symbolSize": 10
+                        })
+                        node_ids.append(author)
+                for keyword in p.keywords:
+                    edges.append({
+                        "source": keyword,
+                        "target": p.n_id
+                    })
+                    if p.keywords[keyword] in kwd_count:
+                        kwd_count[p.keywords[keyword]] += 1
+                    else:
+                        kwd_count[p.keywords[keyword]] = 1
+                    if keyword in node_ids: pass
+                    else:
+                        nodes.append({
+                            "id": keyword,
+                            "name": p.keywords[keyword],
+                            "type": "Keyword",
+                            "category": 1,
+                            "symbolSize": 10
+                        })
+                        node_ids.append(keyword)
+                node_ids.append(paper['id'])
+                paper_count += 1
+        js = dict(type="force", categories=[{'name': 'Author'},{'name': 'Keyword'},{'name': 'Paper'}], nodes=[], links=[])
+        js['nodes'] = nodes
+        js['links'] = edges
+        js['legends'] = ['Author','Keyword','Paper']
+        wordcloud_data = []
+        for kwds in sorted(kwd_count.items(), key=lambda x:x[1], reverse=True):
+            kwd = kwds[0]
+            wordcloud_data.append({
+                "name": kwd,
+                "value": kwd_count[kwd]
+            })
+        js['wordcloud_data'] = wordcloud_data
+        js['paper_count'] = paper_count
+        js['top_keywords'] = wordcloud_data[:3]
     return js
 
 
 @app.route('/paper/list', methods=['POST'])
 def paper_list():
+    mode = request.form["mode"]
     query = request.form["query"]
-    return render_template("resultlist.html",query=query)
+    return render_template("resultlist.html",query=query,mode=mode)
 
 @app.route('/paper/list', methods=['GET'])
 def paper_list_default():
     query = ""
-    return render_template("resultlist.html",query=query)
+    return render_template("resultlist.html",query=query,mode="Paper")
 
+@app.route('/cluster')
+def cluster():
+    return render_template("cluster.html")
 
 @app.route('/search',methods=['POST'])
 def search():
     mode = request.form["mode"]
     query = request.form["query"]
     page = request.form["page"]
-    response = n.search(query, page)
+    response = n.search(query, page, mode=mode)
     result = response["result"]
     if result is None:
         abort(404)
@@ -224,16 +343,23 @@ def search():
     for paper in result:
         detail = n.getPaperBasic(paper['name'])
         authors = []
-        for author in detail.authors:
-            authors.append(detail.authors[author])
-        info = {'id': detail.paper_id,
-                'title': re.sub(query, '<span class=\"text-danger\">' + query + '</span>', str(detail.title),flags=re.IGNORECASE),
-                'year': detail.year, 'cluster': detail.cluster, 'cits': detail.cit_count, 'author': authors}
-        res_list.append(info)
-    return {"result":res_list,"count":response["count"]}
+        if mode == "Paper":
+            for author in detail.authors:
+                authors.append(detail.authors[author])
+            info = {'id': detail.paper_id,
+                    'title': re.sub(query, '<span class=\"text-danger\">' + query + '</span>', str(detail.title), flags=re.IGNORECASE),
+                    'year': detail.year, 'cluster': detail.cluster, 'cits': detail.cit_count, 'author': authors}
+            res_list.append(info)
+        elif mode == "Author":
+            for author in detail.authors:
+                authors.append(re.sub(query, '<span class=\"text-danger\">' + query + '</span>', str(detail.authors[author]), flags=re.IGNORECASE))
+            info = {'id': detail.paper_id, 'title': detail.title, 'year': detail.year, 'cluster': detail.cluster,
+                    'cits': detail.cit_count, 'author': authors}
+            res_list.append(info)
+    return {"result": res_list, "count": response["count"]}
 
 
 if __name__ == '__main__':
     m = mysql.mysqlConnection()
     n = neo4j.neoConnection()
-    app.run(host='0.0.0.0', port=8517, threaded=True)
+    app.run(host='0.0.0.0', port=6517, threaded=True)

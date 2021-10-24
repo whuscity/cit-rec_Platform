@@ -54,7 +54,7 @@
           <input type="text" class="form-control" aria-label="Text input with dropdown button" id="query" name="query">
           <input hidden="hidden" type="text" class="mode" name="mode" value="Paper" id="mode">
         </div>
-        <button class="btn btn-outline-success bg-light" type="submit">Search</button>
+        <button class="btn btn-outline-success btn-primary text-light" type="submit">Search</button>
 
       </form>
     </div>
@@ -199,7 +199,9 @@ var myChart = echarts.init(dom);
 var app = {};
 var option;
 myChart.showLoading();
-$.post('/graphdata/{{ paper.paper_id }}', function (webkitDep) {
+$.post('/graphdata/{{ paper.paper_id }}',
+        {"load_type":"G"},
+        function (webkitDep) {
     myChart.hideLoading();
 
     option = {

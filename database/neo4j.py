@@ -102,6 +102,7 @@ class neoConnection:
 
     def search(self, query, page, mode="Paper"):
         n_matcher = NodeMatcher(self.graph)
+        r_matcher = RelationshipMatcher(self.graph)
         RES_PER_PAGE = 10
         if mode == "Paper":
             match = n_matcher.match("Paper", title=LIKE("(?i).*" + str(query) + ".*"))
@@ -109,13 +110,22 @@ class neoConnection:
                 (int(page) - 1) * RES_PER_PAGE).limit(RES_PER_PAGE).order_by("_.year DESC", "_.cit_count DESC")
             count = match.where("_.year < 2014").count()
         elif mode == "Author":
-            match = n_matcher.match("Author", name=LIKE("(?i).*" + str(query) + ".*"))
-            result = match.where("_.year < 2014").skip(
-                (int(page) - 1) * RES_PER_PAGE).limit(RES_PER_PAGE).order_by("_.year DESC", "_.cit_count DESC")
-            count = match.where("_.year < 2014").count()
+            papers = []
+            res = self.graph.run(
+                "MATCH (a:Author)-[]-(p:Paper) WHERE a.name=~\"(?i).*" + query
+                + ".*\" return p ORDER BY p.year DESC SKIP " + str((int(page) - 1) * RES_PER_PAGE)
+                + " LIMIT " + str(RES_PER_PAGE)).data()
+            for p in res:
+                papers.append(p['p'])
+            result = papers
+            count = self.graph.run("MATCH (a:Author)-[]-(p:Paper) WHERE a.name=~\"(?i).*" + query
+                                   + ".*\" return COUNT(p)").data()[0]['COUNT(p)']
         else:
             match = n_matcher.match(mode, title=LIKE("(?i).*" + str(query) + ".*"))
             result = match.where("_.year < 2014").skip(
                 (int(page) - 1) * RES_PER_PAGE).limit(RES_PER_PAGE).order_by("_.year DESC", "_.cit_count DESC")
             count = match.where("_.year < 2014").count()
         return {"result": result, "count": count}
+
+    def cypher(self,query):
+        return self.graph.run(query)
